@@ -1,6 +1,6 @@
-import { initEngine } from 'https://yanivdg.github.io/yanivdg/animated/core_engine.js';
-import { loadParrots } from 'https://yanivdg.github.io/yanivdg/animated/asset_loader_parrot.js';
-import { createFlock, updateFlock } from 'https://yanivdg.github.io/yanivdg/animated/flock_system_boids.js';
+import { initEngine } from 'https://cdn.jsdelivr.net/gh/yanivdg/Parrot-Training@main/animated/core_engine.js';
+import { loadParrots } from 'https://cdn.jsdelivr.net/gh/yanivdg/Parrot-Training@main/animated/asset_loader_parrot.js';
+import { createFlock, updateFlock } from 'https://cdn.jsdelivr.net/gh/yanivdg/Parrot-Training@main/animated/flock_system_boids.js';
 
 // 1. Start engine
 initEngine();
