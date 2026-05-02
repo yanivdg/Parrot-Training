@@ -219,9 +219,14 @@ function loadRecordings() {
 
   req.onsuccess = () => {
     const list = document.getElementById("list");
-    list.innerHTML = "";
+    list.innerHTML = ""; // IMPORTANT
+
+    const seen = new Set();
 
     req.result.forEach(r => {
+      if (seen.has(r.id)) return; // prevent duplicates
+      seen.add(r.id);
+
       const url = URL.createObjectURL(r.blob);
 
       const div = document.createElement("div");
