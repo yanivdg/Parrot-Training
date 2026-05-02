@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Parrot Trainer V1</title>
+<style>
+  body {
+    font-family: Arial;
+    text-align: center;
+    background: #0f172a;
+    color: white;
+  }
+  button {
+    padding: 12px 20px;
+    margin: 10px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+  }
+  .record { background: red; color: white; }
+  .play { background: green; color: white; }
+  .reward { background: gold; color: black; }
+  .mode { background: #38bdf8; }
+  #status { margin-top: 20px; font-size: 18px; }
+</style>
+</head>
+<body>
+
+<h1>🦜 Parrot Trainer V1</h1>
+
+<button class="mode" onclick="setMode('speech')">Speech Mode (Conure)</button>
+<button class="mode" onclick="setMode('whistle')">Whistle Mode (Cockatiel)</button>
+
+<br>
+
+<button class="play" onclick="playTarget()">🔊 Play Target</button>
+<button class="record" onclick="startRecording()">🎙 Record</button>
+<button onclick="stopRecording()">⏹ Stop</button>
+
+<br>
+
+<audio id="playback" controls></audio>
+
+<div id="status">Ready</div>
+
+<script>
+let mode = "speech";
+let mediaRecorder;
+let audioChunks = [];
+let recordedBlob = null;
+
+function setMode(m) {
+  mode = m;
+  document.getElementById("status").innerText = "Mode: " + mode;
+}
+
+// TARGET SOUNDS
+function playTarget() {
+  if (mode === "speech") {
+    const utter = new SpeechSynthesisUtterance("boker tov");
+    speechSynthesis.speak(utter);
+  } else {
+    playWhistle();
+  }
+}
+
+// SIMPLE WHISTLE GENERATOR
+function playWhistle() {
+  const ctx = new AudioContext();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(1500, ctx.currentTime);
+  osc.frequency.linearRampToValueAtTime(2500, ctx.currentTime + 0.3);
+  osc.frequency.linearRampToValueAtTime(1800, ctx.currentTime + 0.6);
+
+  gain.gain.setValueAtTime(0.2, ctx.currentTime);
+
+  osc.start();
+  osc.stop(ctx.currentTime + 1);
+}
+
+// RECORDING
+async function startRecording() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  mediaRecorder = new MediaRecorder(stream);
+  audioChunks = [];
+
+  mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+  mediaRecorder.onstop = () => {
+    recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+    const url = URL.createObjectURL(recordedBlob);
+    document.getElementById("playback").src = url;
+
+    analyzeAudio(recordedBlob);
+  };
+
+  mediaRecorder.start();
+  document.getElementById("status").innerText = "Recording...";
+}
+
+function stopRecording() {
+  if (mediaRecorder) {
+    mediaRecorder.stop();
+    document.getElementById("status").innerText = "Processing...";
+  }
+}
+
+// VERY SIMPLE ANALYSIS (V1 ONLY)
+function analyzeAudio(blob) {
+  const reader = new FileReader();
+  reader.onload = function() {
+    const arrayBuffer = reader.result;
+
+    const ctx = new AudioContext();
+    ctx.decodeAudioData(arrayBuffer, buffer => {
+      const data = buffer.getChannelData(0);
+
+      let energy = 0;
+      for (let i = 0; i < data.length; i++) {
+        energy += Math.abs(data[i]);
+      }
+
+      energy = energy / data.length;
+
+      let result = "";
+
+      if (energy > 0.02) {
+        result = "✅ Good attempt! Reward!";
+        reward();
+      } else {
+        result = "⚠️ Too weak / no clear sound";
+      }
+
+      document.getElementById("status").innerText = result;
+    });
+  };
+  reader.readAsArrayBuffer(blob);
+}
+
+// REWARD FEEDBACK
+function reward() {
+  document.body.style.background = "green";
+  setTimeout(() => {
+    document.body.style.background = "#0f172a";
+  }, 300);
+
+  const ctx = new AudioContext();
+  const osc = ctx.createOscillator();
+  osc.connect(ctx.destination);
+  osc.frequency.value = 800;
+  osc.start();
+  osc.stop(ctx.currentTime + 0.1);
+}
+</script>
+
+</body>
+</html>
